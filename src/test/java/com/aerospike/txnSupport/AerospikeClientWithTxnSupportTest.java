@@ -936,7 +936,7 @@ public class AerospikeClientWithTxnSupportTest {
     private static Vector<Record> getTransactions(AerospikeClient client){
         ScanPolicy policy = new ScanPolicy();
         policy.concurrentNodes = true;
-        policy.priority = Priority.LOW;
+        //policy.priority = Priority.LOW;
         policy.includeBinData = false;
 
         RecordRetrieverFromScan recordRetriever = new RecordRetrieverFromScan();

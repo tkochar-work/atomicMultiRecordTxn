@@ -2,8 +2,9 @@ package com.aerospike.txnSupport;
 
 import com.aerospike.client.*;
 import com.aerospike.client.Record;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.Expression;
 import com.aerospike.client.policy.*;
-import com.aerospike.client.query.PredExp;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -472,9 +473,12 @@ public class AerospikeClientWithTxnSupport extends AerospikeClient implements Tx
      */
     public void removeLock(Key key,String txnID){
         Key lockKey  = lockKey(key);
-        PredExp[] txnEqual = {PredExp.stringBin(TXN_ID_BIN_NAME),PredExp.stringValue(txnID),PredExp.stringEqual()};
+        //PredExp[] txnEqual = {PredExp.stringBin(TXN_ID_BIN_NAME),PredExp.stringValue(txnID),PredExp.stringEqual()};
+        Expression txnEqualExpression = Exp.build(
+            Exp.eq(Exp.stringBin(TXN_ID_BIN_NAME), Exp.val(txnID)));
         WritePolicy deleteLockPolicy = new WritePolicy(txnWritePolicy);
-        deleteLockPolicy.predExp = txnEqual;
+        //deleteLockPolicy.predExp = txnEqual;
+        deleteLockPolicy.filterExp = txnEqualExpression;
         try {
             delete(deleteLockPolicy, lockKey);
         }

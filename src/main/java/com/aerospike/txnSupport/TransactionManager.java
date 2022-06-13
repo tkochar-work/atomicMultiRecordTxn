@@ -1,6 +1,8 @@
 package com.aerospike.txnSupport;
 
 import com.aerospike.client.*;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.Expression;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.WritePolicy;
@@ -109,10 +111,14 @@ public class TransactionManager {
         stmt.setNamespace(client.getTransactionNamespace());
         stmt.setSetName(AerospikeClientWithTxnSupport.LOCK_SET);
         stmt.setFilter(Filter.equal(Constants.TYPE_BIN_NAME,AerospikeClientWithTxnSupport.LOCK_TYPE));
-        stmt.setPredExp(PredExp.integerBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME),PredExp.integerValue(System.currentTimeMillis() - transactionTimeOutMillis),PredExp.integerLess());
+        //stmt.setPredExp(PredExp.integerBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME),PredExp.integerValue(System.currentTimeMillis() - transactionTimeOutMillis),PredExp.integerLess());
 
+        QueryPolicy filterQueryPolicy = new QueryPolicy();
+        filterQueryPolicy.filterExp = Exp.build(
+            Exp.lt(Exp.intBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME), Exp.val(System.currentTimeMillis() - transactionTimeOutMillis))
+        );
         // If the txn they are associated with does not exist remove them
-        for (KeyRecord r : client.query(queryPolicy, stmt)) {
+        for (KeyRecord r : client.query(filterQueryPolicy, stmt)) {
             String txnID = r.record.getString(AerospikeClientWithTxnSupport.TXN_ID_BIN_NAME);
             if (txnHash.get(txnID) == null) {
                 client.delete(writePolicy, r.key);
@@ -134,8 +140,12 @@ public class TransactionManager {
         txnStmt.setSetName(AerospikeClientWithTxnSupport.TRANSACTION_SET);
         txnStmt.setBinNames(AerospikeClientWithTxnSupport.TXN_ID_BIN_NAME);
         txnStmt.setFilter(Filter.equal(Constants.TYPE_BIN_NAME,AerospikeClientWithTxnSupport.TXN_TYPE));
-        txnStmt.setPredExp(PredExp.integerBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME),PredExp.integerValue(System.currentTimeMillis() - transactionTimeOutMillis),PredExp.integerLess());
+        //txnStmt.setPredExp(PredExp.integerBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME),PredExp.integerValue(System.currentTimeMillis() - transactionTimeOutMillis),PredExp.integerLess());
 
+        QueryPolicy filterQueryPolicy = new QueryPolicy();
+        filterQueryPolicy.filterExp = Exp.build(
+            Exp.lt(Exp.intBin(AerospikeClientWithTxnSupport.TIMESTAMP_BIN_NAME), Exp.val(System.currentTimeMillis() - transactionTimeOutMillis))
+        );
         for (KeyRecord keyRecord : client.query(queryPolicy, txnStmt)) {
             txnIDList.addElement(keyRecord.record.getString(AerospikeClientWithTxnSupport.TXN_ID_BIN_NAME));
         }
